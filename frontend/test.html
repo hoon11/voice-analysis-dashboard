@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Voice Session Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+
+  <body>
+    <h1>Sessions</h1>
+
+    <ul id="list"></ul>
+
+    <h2>Detail</h2>
+    <pre id="detail"></pre>
+
+    <h2>Pitch Chart</h2>
+    <canvas id="chart" width="600" height="300"></canvas>
+
+    <script>
+      const list = document.getElementById("list");
+      const detail = document.getElementById("detail");
+      const chartCanvas = document.getElementById("chart");
+
+      let chart = null;
+
+      fetch("http://127.0.0.1:8000/session")
+        .then((res) => res.json())
+        .then((data) => {
+          data.forEach((s) => {
+            const li = document.createElement("li");
+            li.textContent = s.session_id;
+            li.style.cursor = "pointer";
+
+            li.onclick = () => {
+              fetch(`http://127.0.0.1:8000/session/${s.session_id}`)
+                .then((res) => res.json())
+                .then((d) => {
+                  detail.textContent = JSON.stringify(d, null, 2);
+                  drawChart(d.frames || []);
+                });
+            };
+
+            list.appendChild(li);
+          });
+        });
+
+      function drawChart(frames) {
+        const labels = frames.map((f) => f.t);
+        const pitch = frames.map((f) => f.pitch);
+
+        if (chart) {
+          chart.destroy();
+        }
+
+        chart = new Chart(chartCanvas, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "Pitch",
+                data: pitch,
+              },
+            ],
+          },
+        });
+      }
+    </script>
+  </body>
+</html>
